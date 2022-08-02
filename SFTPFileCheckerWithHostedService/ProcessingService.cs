@@ -11,10 +11,13 @@ namespace SFTPFileCheckerWithHostedService
         private int executionCount = 0;
         private readonly ILogger _logger;
         private ISFTPService _sFTPService;
-        public ProcessingService(ILogger<ProcessingService> logger, ISFTPService sFTPService)
+        private readonly IConfiguration _configuration;
+
+        public ProcessingService(ILogger<ProcessingService> logger, ISFTPService sFTPService, IConfiguration configuration)
         {
             _logger = logger;
             _sFTPService = sFTPService;
+            _configuration = configuration;
         }
 
         public async Task DoWork(CancellationToken stoppingToken)
@@ -26,7 +29,7 @@ namespace SFTPFileCheckerWithHostedService
                 _logger.LogInformation(
                     "Scoped Processing Service is working. Count: {Count}", executionCount);
                 _sFTPService.DownloadFiles();
-                await Task.Delay(60000, stoppingToken);
+                await Task.Delay(Convert.ToInt32(_configuration["Schedule:timeInterVal"]), stoppingToken);
             }
         }
     }
