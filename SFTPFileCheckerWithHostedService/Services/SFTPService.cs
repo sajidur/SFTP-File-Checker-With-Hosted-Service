@@ -11,21 +11,24 @@ namespace SFTPFileCheckerWithHostedService.Services
     {
         private ILogger<SFTPService> _logger;
         private IFileHistoryService _historyService;
-        public SFTPService(ILogger<SFTPService> logger, IFileHistoryService historyService)
+        private readonly IConfiguration _configuration;
+
+        public SFTPService(ILogger<SFTPService> logger, IFileHistoryService historyService, IConfiguration configuration)
         {
             _logger = logger;
             _historyService = historyService;
+            _configuration = configuration;
         }
         public void DownloadFiles()
         {
             try
             {
-                var client = new SftpClient("test.rebex.net", "demo", "password");
+                var client = new SftpClient(_configuration["SFTPServer:server"], _configuration["SFTPServer:username"], _configuration["SFTPServer:password"]);
                 client.Connect();
-                var list=client.ListDirectory("/pub/example/");
+                var list=client.ListDirectory(_configuration["SFTPServer:path"]);
                 foreach (var file in list)
                 {
-                    var filePath= @"E:\SFTP-File-Checker-With-Hosted-Service\" + DateTime.Now.Millisecond.ToString() + "_" + Path.GetFileName(file.FullName);
+                    var filePath= _configuration["LocalServer:path"] + DateTime.Now.Millisecond.ToString() + "_" + Path.GetFileName(file.FullName);
                     using (Stream fileStream = File.OpenWrite(filePath))
                     {
                         client.DownloadFile(file.FullName, fileStream);
