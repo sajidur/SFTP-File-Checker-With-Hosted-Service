@@ -1,11 +1,14 @@
 ﻿using SFTPFileCheckerWithHostedService.Data;
 using SFTPFileCheckerWithHostedService.Model;
+using System.Collections.Generic;
 
 namespace SFTPFileCheckerWithHostedService.Services
 {
     public interface IFileHistoryService
     {
         Task<FileHistory> SaveFileHistory(FileHistory  fileHistory);
+        Task<IEnumerable<FileHistory>> GetAllFileHistory();
+
     }
     class FileHistoryService : IFileHistoryService
     {
@@ -16,6 +19,12 @@ namespace SFTPFileCheckerWithHostedService.Services
             _fileHistoryRepository= fileHistoryRepository;
             _logger= logger;
         }
+
+        public Task<IEnumerable<FileHistory>> GetAllFileHistory()
+        {
+            return _fileHistoryRepository.GetAll();
+        }
+
         public async Task<FileHistory> SaveFileHistory(FileHistory fileHistory)
         {
             _fileHistoryRepository.Insert(fileHistory);
