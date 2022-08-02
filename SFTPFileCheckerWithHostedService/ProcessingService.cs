@@ -1,4 +1,6 @@
-﻿namespace SFTPFileCheckerWithHostedService
+﻿using SFTPFileCheckerWithHostedService.Services;
+
+namespace SFTPFileCheckerWithHostedService
 {
     public interface IProcessingService
     {
@@ -8,10 +10,11 @@
     {
         private int executionCount = 0;
         private readonly ILogger _logger;
-
-        public ProcessingService(ILogger<ProcessingService> logger)
+        private ISFTPService _sFTPService;
+        public ProcessingService(ILogger<ProcessingService> logger, ISFTPService sFTPService)
         {
             _logger = logger;
+            _sFTPService = sFTPService;
         }
 
         public async Task DoWork(CancellationToken stoppingToken)
@@ -22,8 +25,8 @@
 
                 _logger.LogInformation(
                     "Scoped Processing Service is working. Count: {Count}", executionCount);
-
-                await Task.Delay(10000, stoppingToken);
+                _sFTPService.DownloadFiles();
+                await Task.Delay(60000, stoppingToken);
             }
         }
     }

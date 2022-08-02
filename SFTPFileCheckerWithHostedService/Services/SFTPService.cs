@@ -1,26 +1,54 @@
 ﻿using Renci.SshNet;
+using SFTPFileCheckerWithHostedService.Model;
 
 namespace SFTPFileCheckerWithHostedService.Services
 {
     public interface ISFTPService
     {
-        string DownloadFiles();
+       void DownloadFiles();
     }
-    public class SFTPService:ISFTPService
+    class SFTPService:ISFTPService
     {
-        public SFTPService()
+        private ILogger<SFTPService> _logger;
+        private IFileHistoryService _historyService;
+        public SFTPService(ILogger<SFTPService> logger, IFileHistoryService historyService)
         {
-
+            _logger = logger;
+            _historyService = historyService;
         }
-        public string DownloadFiles()
+        public void DownloadFiles()
         {
-            var client = new SftpClient("192.168.0.1", 80, "username", "password");
-            client.Connect();
-            using (Stream fileStream = File.OpenWrite("c:\\temp\\file.tmp"))
+            try
             {
-                client.DownloadFile("", fileStream);
+                var client = new SftpClient("test.rebex.net", "demo", "password");
+                client.Connect();
+                var list=client.ListDirectory("/pub/example/");
+                foreach (var file in list)
+                {
+                    var filePath= @"E:\SFTP-File-Checker-With-Hosted-Service\" + DateTime.Now.Millisecond.ToString() + "_" + Path.GetFileName(file.FullName);
+                    using (Stream fileStream = File.OpenWrite(filePath))
+                    {
+                        client.DownloadFile(file.FullName, fileStream);
+                    }
+                    //save history in database
+                    FileHistory fileHistory = new FileHistory();
+                    fileHistory.FileName = filePath;
+                    fileHistory.CreatedDate = DateTime.Now;
+
+                    var res=_historyService.SaveFileHistory(fileHistory).IsCompletedSuccessfully;
+                    if (res)
+                    {
+                        _logger.LogInformation(file + " saved sucessfully");
+                    }
+                }
+
             }
-            return "";
+            catch (Exception ex)
+            {
+                _logger.LogInformation(ex.Message + " |"+ex.InnerException);
+                throw ex;
+            }
+
         }
     }
 }
